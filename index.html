@@ -991,7 +991,7 @@
     const linhas = Object.entries(porCidade)
       .map(([cidade, v])=>({cidade, pct: Math.round((v.vazio/v.total)*100), total:v.total}))
       .sort((a,b)=>b.pct-a.pct)
-      .slice(0,6);
+      .slice(0,10);
 
     const el = document.getElementById('ranking-cidades');
     if(linhas.length===0){
@@ -1020,7 +1020,7 @@
       .filter(([,v])=>v.total>=3)
       .map(([motorista, v])=>({motorista, pct: Math.round((v.vazio/v.total)*100), total:v.total}))
       .sort((a,b)=>b.pct-a.pct)
-      .slice(0,6);
+      .slice(0,10);
 
     const el = document.getElementById('ranking-motoristas');
     if(linhas.length===0){
@@ -1047,7 +1047,7 @@
     const linhas = Object.entries(porCidade)
       .map(([cidade, total])=>({cidade, total}))
       .sort((a,b)=>b.total-a.total)
-      .slice(0,6);
+      .slice(0,10);
 
     const el = document.getElementById('ranking-cidades-coleta');
     if(linhas.length===0){
