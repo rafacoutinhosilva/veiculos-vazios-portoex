@@ -641,8 +641,8 @@
 
     <div class="ranking-row">
       <section class="panel">
-        <h2>Cidades com mais retornos vazios</h2>
-        <p class="sub">Percentual de retornos sem coleta por cidade de última entrega.</p>
+        <h2>Praças com mais retornos vazios</h2>
+        <p class="sub">Percentual de retornos sem coleta por praça (região de cidades).</p>
         <div id="ranking-cidades"></div>
       </section>
       <section class="panel">
@@ -651,8 +651,8 @@
         <div id="ranking-motoristas"></div>
       </section>
       <section class="panel">
-        <h2>Cidades com mais retornos com coleta</h2>
-        <p class="sub">Cidades onde mais voltamos com coleta (volume).</p>
+        <h2>Praças com mais retornos com coleta</h2>
+        <p class="sub">Praças onde mais voltamos com coleta (volume).</p>
         <div id="ranking-cidades-coleta"></div>
       </section>
     </div>
@@ -792,6 +792,25 @@
     const m = cidade.toUpperCase().match(/([A-Z]{2})\s*$/);
     if(m && UFS.includes(m[1])) return m[1];
     return 'Outra';
+  }
+
+  // ---------- praças (agrupamento de cidades por região operacional) ----------
+  const PRACA_MAP = {"agrolandia": "Rio do Sul", "antonio carlos": "Florianópolis", "apiuna": "Blumenau", "arapongas": "Arapongas", "araquari": "Joinville", "ararangua": "Criciúma/Tubarão", "araucaria": "Curitiba", "ascurra": "Blumenau", "biguacu": "Florianópolis", "brasilia": "Brasília", "balneario camboriu": "Itajaí", "balneario picarras": "Itajaí", "barra velha": "Itajaí", "belo horizonte": "Belo Horizonte", "benedito novo": "Blumenau", "blumenau": "Blumenau", "bom retiro": "Lages", "bombinhas": "Itajaí", "braco do norte": "Criciúma/Tubarão", "brusque": "Brusque", "cacador": "Meio-Oeste (SC)", "chapeco": "Meio-Oeste (SC)", "colombo": "Curitiba", "curitiba": "Curitiba", "cajamar": "Cajamar", "camboriu": "Itajaí", "camburiu": "Itajaí", "campo alegre": "São Bento do Sul", "campo grande": "Campo Grande", "campo largo": "Curitiba", "campo magro": "Curitiba", "capivari de baixo": "Criciúma/Tubarão", "cascavel": "Cascavel", "caxias do sul": "Caxias do Sul", "cocal do sul": "Criciúma/Tubarão", "concordia": "Meio-Oeste (SC)", "contagem": "Contagem", "criciuma": "Criciúma/Tubarão", "cuiaba": "Cuiabá", "curitibanos": "Lages", "doutor pedrinho": "Blumenau", "embu das artes": "Embu das Artes", "farroupilha": "Farroupilha", "ferraz de vasconcelos": "Ferraz de Vasconcelos", "florianopolis": "Florianópolis", "garopaba": "Florianópolis", "garuva": "Joinville", "gaspar": "Blumenau", "goiania": "Goiânia", "governador celso ramos": "Florianópolis", "gravatal": "Criciúma/Tubarão", "guabiruba": "Brusque", "guabituba": "Brusque", "guaiba": "Guaíba", "guaramirim": "Jaraguá do Sul", "guarapuava": "Guarapuava", "guarulhos": "Guarulhos", "herval d'oeste": "Meio-Oeste (SC)", "indaial": "Blumenau", "itapoa": "Joinville", "ibirama": "Rio do Sul", "ibitinga": "Ibitinga", "ilhota": "Itajaí", "imbituba": "Florianópolis", "iolhota": "Itajaí", "itajai": "Itajaí", "itapema": "Itajaí", "icara": "Criciúma/Tubarão", "jaragua do sul": "Jaraguá do Sul", "jarugua do sul": "Jaraguá do Sul", "joacaba": "Meio-Oeste (SC)", "joimville": "Joinville", "joinville": "Joinville", "lages": "Lages", "lontras": "Rio do Sul", "luiz alves": "Itajaí", "laurentino": "Laurentino", "londrina": "Londrina", "maringa": "Maringá", "massaranduba": "Jaraguá do Sul", "morro da fumaca": "Criciúma/Tubarão", "maracaja": "Criciúma/Tubarão", "nova trento": "Brusque", "navegantes": "Itajaí", "navegntes": "Itajaí", "nevagantes": "Itajaí", "nova veneza": "Criciúma/Tubarão", "osasco": "Osasco", "orleans": "Criciúma/Tubarão", "otacilio costa": "Lages", "penha": "Itajaí", "porto alegre": "Porto Alegre", "porto belo": "Itajaí", "palhoca": "Florianópolis", "paranagua": "Paranaguá", "pomerode": "Blumenau", "ponta grossa": "Ponta Grossa", "pouso redondo": "Rio do Sul", "rio de janeiro": "Rio de Janeiro", "rio do sul": "Rio do Sul", "rio negrinho": "São Bento do Sul", "rodeio": "Blumenau", "ribeirao preto": "Ribeirão Preto", "sao bento do sul": "São Bento do Sul", "sao francisco do sul": "Joinville", "sao jose": "Florianópolis", "sangao": "Criciúma/Tubarão", "santa cecilia": "Lages", "santa rosa": "Santa Rosa", "santo amaro da imperatriz": "Florianópolis", "santo andre": "Santo André", "santos": "Santos", "schoroeder": "Joinville", "schroeder": "Joinville", "sao joao batista": "Brusque", "sao miguel do oeste": "Meio-Oeste (SC)", "sao jose dos pinhais": "Curitiba", "sao josee": "São Joseé", "sao paulo": "São Paulo", "tijucas": "Brusque", "timbo": "Blumenau", "telemaco borba": "Telêmaco Borba", "tubarao": "Criciúma/Tubarão", "urussanga": "Criciúma/Tubarão"};
+
+  function normalizarBaseCidade(cidade){
+    let s = (cidade || '').trim();
+    s = s.replace(/[\s\-\/,|–]+[A-Za-z]{2}\s*$/,'').trim();
+    s = s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    s = s.replace(/\s+/g,' ').trim();
+    return s;
+  }
+
+  function getPraca(cidade){
+    const base = normalizarBaseCidade(cidade);
+    if(PRACA_MAP[base]) return PRACA_MAP[base];
+    // não catalogada: usa a própria cidade (com a primeira letra de cada palavra maiúscula) como praça
+    const original = (cidade || '').replace(/[\s\-\/,|–]+[A-Za-z]{2}\s*$/,'').trim();
+    return original || 'Outra';
   }
 
   function atualizarListas(){
@@ -981,15 +1000,16 @@
 
   // ---------- ranking por cidade ----------
   function renderRanking(filtrados){
-    const porCidade = {};
+    const porPraca = {};
     filtrados.forEach(r=>{
-      if(!porCidade[r.cidade]) porCidade[r.cidade] = {total:0, vazio:0};
-      porCidade[r.cidade].total++;
-      if(r.coleta==='Não') porCidade[r.cidade].vazio++;
+      const praca = getPraca(r.cidade);
+      if(!porPraca[praca]) porPraca[praca] = {total:0, vazio:0};
+      porPraca[praca].total++;
+      if(r.coleta==='Não') porPraca[praca].vazio++;
     });
 
-    const linhas = Object.entries(porCidade)
-      .map(([cidade, v])=>({cidade, pct: Math.round((v.vazio/v.total)*100), total:v.total}))
+    const linhas = Object.entries(porPraca)
+      .map(([praca, v])=>({praca, pct: Math.round((v.vazio/v.total)*100), total:v.total}))
       .sort((a,b)=>b.pct-a.pct)
       .slice(0,10);
 
@@ -1000,7 +1020,7 @@
     }
     el.innerHTML = linhas.map(l=>`
       <div class="rank-row">
-        <div class="city">${l.cidade}</div>
+        <div class="city">${l.praca}</div>
         <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${l.pct}%"></div></div>
         <div class="pct">${l.pct}%</div>
       </div>
@@ -1036,16 +1056,17 @@
     `).join('');
   }
 
-  // ---------- ranking por cidade (com coleta) ----------
+  // ---------- ranking por praça (com coleta) ----------
   function renderRankingCidadesColeta(filtrados){
-    const porCidade = {};
+    const porPraca = {};
     filtrados.forEach(r=>{
       if(r.coleta!=='Sim') return;
-      porCidade[r.cidade] = (porCidade[r.cidade] || 0) + 1;
+      const praca = getPraca(r.cidade);
+      porPraca[praca] = (porPraca[praca] || 0) + 1;
     });
 
-    const linhas = Object.entries(porCidade)
-      .map(([cidade, total])=>({cidade, total}))
+    const linhas = Object.entries(porPraca)
+      .map(([praca, total])=>({praca, total}))
       .sort((a,b)=>b.total-a.total)
       .slice(0,10);
 
@@ -1057,7 +1078,7 @@
     const max = linhas[0].total;
     el.innerHTML = linhas.map(l=>`
       <div class="rank-row">
-        <div class="city">${l.cidade}</div>
+        <div class="city">${l.praca}</div>
         <div class="rank-bar-bg"><div class="rank-bar-fill ok" style="width:${Math.round((l.total/max)*100)}%"></div></div>
         <div class="pct">${l.total}</div>
       </div>
