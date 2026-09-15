@@ -290,6 +290,52 @@
   .rank-bar-fill.ok{background:var(--ok);}
   .rank-row .pct{width:44px; text-align:right; font-family:'IBM Plex Mono', monospace; color:var(--muted); flex-shrink:0;}
 
+  /* tabela de praças */
+  .tabela-pracas{width:100%; border-collapse:collapse; font-size:13.5px;}
+  .tabela-pracas thead th{
+    text-align:left;
+    font-size:11.5px;
+    color:var(--muted);
+    font-weight:600;
+    letter-spacing:.03em;
+    padding:8px 12px;
+    border-bottom:2px solid var(--line);
+    white-space:nowrap;
+  }
+  .tabela-pracas tbody td{
+    padding:12px 12px;
+    border-bottom:1px solid var(--line);
+    white-space:nowrap;
+  }
+  .tabela-pracas tbody tr:hover{background:#FAFAFD;}
+  .tabela-pracas .col-rank{color:var(--muted); font-family:'IBM Plex Mono', monospace; width:28px;}
+  .tabela-pracas .col-destino{font-weight:700; color:var(--navy);}
+  .tabela-pracas .col-num{font-family:'IBM Plex Mono', monospace; text-align:left;}
+  .tabela-pracas .col-num.sim{color:var(--navy); font-weight:700;}
+  .tabela-pracas .col-num.nao{color:var(--orange); font-weight:700;}
+  .pct-pill{
+    display:inline-block;
+    padding:4px 11px;
+    border-radius:4px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    font-weight:700;
+    color:#fff;
+  }
+  .pct-pill.alta{background:var(--navy);}
+  .pct-pill.baixa{background:var(--orange);}
+  .col-proporcao{width:220px;}
+  .prop-bar-bg{
+    width:200px;
+    height:10px;
+    background:#EEF0F6;
+    border-radius:5px;
+    overflow:hidden;
+    display:flex;
+  }
+  .prop-bar-navy{height:100%; background:var(--navy);}
+  .prop-bar-orange{height:100%; background:var(--orange);}
+
   /* ranking row (panels side by side) */
   .ranking-row{
     display:grid;
@@ -639,21 +685,33 @@
       </div>
     </section>
 
+    <section class="panel">
+      <h2>Praças</h2>
+      <p class="sub">Total de retornos por praça, com coleta x vazio em quantidade e percentual.</p>
+      <div style="overflow-x:auto;">
+      <table class="tabela-pracas">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Destino</th>
+            <th>Total</th>
+            <th>Sim</th>
+            <th>Não</th>
+            <th>% Coleta</th>
+            <th>Proporção</th>
+          </tr>
+        </thead>
+        <tbody id="pracas-body"></tbody>
+      </table>
+      </div>
+      <div class="empty-state" id="pracas-empty" style="display:none;">Sem dados para esse filtro.</div>
+    </section>
+
     <div class="ranking-row">
-      <section class="panel">
-        <h2>Praças com mais retornos vazios</h2>
-        <p class="sub">Percentual de retornos sem coleta por praça (região de cidades).</p>
-        <div id="ranking-cidades"></div>
-      </section>
       <section class="panel">
         <h2>Motoristas com mais retornos vazios</h2>
         <p class="sub">Percentual de retornos sem coleta por motorista.</p>
         <div id="ranking-motoristas"></div>
-      </section>
-      <section class="panel">
-        <h2>Praças com mais retornos com coleta</h2>
-        <p class="sub">Praças onde mais voltamos com coleta (volume).</p>
-        <div id="ranking-cidades-coleta"></div>
       </section>
     </div>
 
@@ -952,9 +1010,8 @@
     const filtrados = getFiltrados();
     renderKpis(filtrados);
     renderDonut(filtrados);
-    renderRanking(filtrados);
+    renderPracas(filtrados);
     renderRankingMotoristas(filtrados);
-    renderRankingCidadesColeta(filtrados);
     renderTabela(filtrados);
   }
 
@@ -998,33 +1055,59 @@
     document.getElementById('legend-vazio-pct').textContent = pctVazio + '%';
   }
 
-  // ---------- ranking por cidade ----------
-  function renderRanking(filtrados){
+  // ---------- tabela de praças (total, sim, não, % coleta, proporção) ----------
+  function renderPracas(filtrados){
     const porPraca = {};
     filtrados.forEach(r=>{
       const praca = getPraca(r.cidade);
-      if(!porPraca[praca]) porPraca[praca] = {total:0, vazio:0};
+      if(!porPraca[praca]) porPraca[praca] = {total:0, sim:0, nao:0};
       porPraca[praca].total++;
-      if(r.coleta==='Não') porPraca[praca].vazio++;
+      if(r.coleta==='Sim') porPraca[praca].sim++; else porPraca[praca].nao++;
     });
 
     const linhas = Object.entries(porPraca)
-      .map(([praca, v])=>({praca, pct: Math.round((v.vazio/v.total)*100), total:v.total}))
-      .sort((a,b)=>b.pct-a.pct)
-      .slice(0,10);
+      .map(([praca, v])=>({
+        praca,
+        total: v.total,
+        sim: v.sim,
+        nao: v.nao,
+        pct: Math.round((v.sim / v.total) * 100)
+      }))
+      .sort((a,b)=>b.total-a.total);
 
-    const el = document.getElementById('ranking-cidades');
+    const tbody = document.getElementById('pracas-body');
+    const empty = document.getElementById('pracas-empty');
+
     if(linhas.length===0){
-      el.innerHTML = '<div class="empty-state">Sem dados para esse filtro.</div>';
+      tbody.innerHTML = '';
+      empty.style.display = 'block';
       return;
     }
-    el.innerHTML = linhas.map(l=>`
-      <div class="rank-row">
-        <div class="city">${l.praca}</div>
-        <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${l.pct}%"></div></div>
-        <div class="pct">${l.pct}%</div>
-      </div>
-    `).join('');
+    empty.style.display = 'none';
+
+    const maxTotal = linhas[0].total;
+
+    tbody.innerHTML = linhas.map((l, i)=>{
+      const larguraBarra = maxTotal ? (l.total / maxTotal) * 100 : 0;
+      const navyPct = l.total ? (l.sim / l.total) * larguraBarra : 0;
+      const orangePct = l.total ? (l.nao / l.total) * larguraBarra : 0;
+      const classePct = l.pct >= 50 ? 'alta' : 'baixa';
+      return `
+      <tr>
+        <td class="col-rank">${i+1}</td>
+        <td class="col-destino">${l.praca}</td>
+        <td class="col-num">${l.total}</td>
+        <td class="col-num sim">${l.sim}</td>
+        <td class="col-num nao">${l.nao}</td>
+        <td><span class="pct-pill ${classePct}">${l.pct}%</span></td>
+        <td class="col-proporcao">
+          <div class="prop-bar-bg">
+            <div class="prop-bar-navy" style="width:${navyPct}%"></div>
+            <div class="prop-bar-orange" style="width:${orangePct}%"></div>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
   }
 
   // ---------- ranking por motorista ----------
@@ -1052,35 +1135,6 @@
         <div class="city">${l.motorista}</div>
         <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${l.pct}%"></div></div>
         <div class="pct">${l.pct}%</div>
-      </div>
-    `).join('');
-  }
-
-  // ---------- ranking por praça (com coleta) ----------
-  function renderRankingCidadesColeta(filtrados){
-    const porPraca = {};
-    filtrados.forEach(r=>{
-      if(r.coleta!=='Sim') return;
-      const praca = getPraca(r.cidade);
-      porPraca[praca] = (porPraca[praca] || 0) + 1;
-    });
-
-    const linhas = Object.entries(porPraca)
-      .map(([praca, total])=>({praca, total}))
-      .sort((a,b)=>b.total-a.total)
-      .slice(0,10);
-
-    const el = document.getElementById('ranking-cidades-coleta');
-    if(linhas.length===0){
-      el.innerHTML = '<div class="empty-state">Sem dados para esse filtro.</div>';
-      return;
-    }
-    const max = linhas[0].total;
-    el.innerHTML = linhas.map(l=>`
-      <div class="rank-row">
-        <div class="city">${l.praca}</div>
-        <div class="rank-bar-bg"><div class="rank-bar-fill ok" style="width:${Math.round((l.total/max)*100)}%"></div></div>
-        <div class="pct">${l.total}</div>
       </div>
     `).join('');
   }
